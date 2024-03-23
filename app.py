@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import pydeck as pdk
 from cars import cars
+from streamlit_drawable_canvas import st_canvas
+from PIL import Image
+import io
 
 # CSS for styling
 header_css = """
@@ -149,8 +152,6 @@ with tab3:
 
     df_tracks = pd.DataFrame(track_info)
 
-    if 'map_expanded' not in st.session_state:
-        st.session_state.map_expanded = False
     if 'selected_track' not in st.session_state:
         st.session_state.selected_track = None
 
@@ -158,31 +159,26 @@ with tab3:
     if st.session_state.selected_track:
         st.success(f"You have selected: {st.session_state.selected_track}")
 
-    # Map Expander
-    with st.expander("View Map", expanded=st.session_state.map_expanded):
-        # Here we directly set map_expanded to True if the expander is opened
-        # It's a direct action, not toggled by the track selection
+    # Button to control the map visibility
+    if st.button('View Map'):
         st.session_state.map_expanded = True
-        map_layer = pdk.Layer(
-            'ScatterplotLayer',
-            data=df_tracks,
-            get_position='[lon, lat]',
-            get_color='[200, 30, 0, 160]',
-            get_radius=50000,
-        )
-        st.pydeck_chart(pdk.Deck(
-            map_style='mapbox://styles/mapbox/light-v9',
-            initial_view_state=pdk.ViewState(latitude=df_tracks['lat'].mean(), longitude=df_tracks['lon'].mean(), zoom=1, pitch=0),
-            layers=[map_layer],
-            tooltip={"html": "<b>{name}</b><br><b>{location}</b>", "style": {"backgroundColor": "steelblue", "color": "white"}}
-        ))
 
-    # Callback function to handle expander state
-    def toggle_map_expander():
-        st.session_state.map_expanded = not st.session_state.map_expanded
-
-    # Use a separate button or mechanism to explicitly control the map expander state
-    # This can be an additional UI element or logic that sets 'map_expanded' independently of track selection
+    # Conditionally render the map expander if map_expanded is True in the session state
+    if st.session_state.get('map_expanded', False):
+        with st.expander("Map", expanded=True):
+            map_layer = pdk.Layer(
+                'ScatterplotLayer',
+                data=df_tracks,
+                get_position='[lon, lat]',
+                get_color='[200, 30, 0, 160]',
+                get_radius=50000,
+            )
+            st.pydeck_chart(pdk.Deck(
+                map_style='mapbox://styles/mapbox/light-v9',
+                initial_view_state=pdk.ViewState(latitude=df_tracks['lat'].mean(), longitude=df_tracks['lon'].mean(), zoom=1, pitch=0),
+                layers=[map_layer],
+                tooltip={"html": "<b>{name}</b><br><b>{location}</b>", "style": {"backgroundColor": "steelblue", "color": "white"}}
+            ))
 
     # Tracks Display
     tracks_per_row = 3
@@ -193,17 +189,62 @@ with tab3:
                 st.image(track["image"], use_column_width=True, caption=f"{track['name']} - {track['location']}")
                 if st.button('Select', key=f'select{track["name"]}'):
                     st.session_state.selected_track = track['name']
-                    # Do not toggle map_expanded state here
-                    st.experimental_rerun()  # Rerun the script
+                    # Explicitly prevent map from expanding upon selection
+                    st.session_state.map_expanded = False
+                    st.experimental_rerun()
 with tab4:
     st.subheader("Make Your Own Racetrack")
     uploaded_file = st.file_uploader("Upload your racetrack image", type=["jpg", "jpeg", "png"], key="file_uploader")
-    
+
+    background_image = None
     if uploaded_file is not None:
-        bytes_data = uploaded_file.getvalue()
+        # Open the uploaded image with PIL
+        background_image = Image.open(uploaded_file)
         st.success("Image uploaded successfully!")
         st.image(uploaded_file, caption='Uploaded Racetrack.', use_column_width=True)
 
+    st.title("Draw and Save Image")
+
+    # Setup canvas with a nicer border and larger size
+    st.markdown("""
+    <style>
+    .canvas-container {
+        border: 2px dashed #000;
+        border-radius: 5px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Create a canvas component
+    canvas_result = st_canvas(
+        fill_color="rgba(255, 165, 0, 0.3)",  # Filler color
+        stroke_width=5,
+        stroke_color="#000000",  # Black pen color
+        background_color="#FFFFFF",
+        background_image=background_image,
+        update_streamlit=True,
+        height=600,  # Increased height
+        width=800,  # Increased width
+        drawing_mode="freedraw",
+        key="canvas",
+    )
+
+    # If there is canvas data
+    if canvas_result.image_data is not None:
+        # Convert the canvas data to a PIL Image
+        im = Image.fromarray(canvas_result.image_data.astype('uint8'), mode="RGBA")
+        # Convert to bytes
+        buf = io.BytesIO()
+        im.save(buf, format='PNG')
+        byte_im = buf.getvalue()
+
+        # Create a download button for the image
+        st.download_button(
+            label="Download Image",
+            data=byte_im,
+            file_name="drawing.png",
+            mime="image/png"
+        )
 with tab5:
     st.subheader("Race Mode")
     st.radio('Select one:', ["Weather", "Track"], index=0)

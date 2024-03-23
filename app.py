@@ -72,43 +72,56 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["Home", "Choose a Car", "Select a Track", "Make a Track", "Test Drive!"])
 
+with tab1:
+    st.markdown("## Welcome to ApexAI Racing Simulator")
+    st.markdown("""
+        Follow these steps to get started:
+        
+        1. **Choose a Car**: Select your favorite racing car to begin.
+        2. **Track Selection**:
+            - **Make Your Own Track**: Unleash your creativity by designing your very own track.
+            - **Select a Professional Formula One Track**: Choose from a list of iconic Formula One tracks.
+        3. **Test Drive**: Put your car and track to the test in a virtual race.
+    """)
+    
+    if st.button('Choose a Car'):
+        st.experimental_set_query_params(page='Choose a Car')
+        st.experimental_rerun()
+    
+    if st.button('Make Your Own Track'):
+        # Implement track creation functionality here
+        st.write("Track creation page")
+        
+    if st.button('Select a Professional Formula One Track'):
+        # Implement track selection functionality here
+        st.write("Track selection page")
+        
+    if st.button('Test Drive'):
+        # Implement test drive functionality here
+        st.write("Test drive page")
+
 with tab2:
         def send_to_pygame_ai(car_data):
-        # Simulate sending data to the Pygame AI model
-        # You'll need to replace this with actual code that integrates with your model
             st.success(f"Sending to ApexAI")
-
         def main():
             st.title("Car Specifications")
-
-        # Create a list of car names for the dropdown menu
             car_names = [car["name"] for car in cars]
-
-        # Let the user select a car name from the dropdown
             selected_car_name = st.selectbox("Select a car", car_names)
-
-        # Find the selected car in the cars list
             selected_car = next(car for car in cars if car["name"] == selected_car_name)
 
             if selected_car:
-                col1, col2 = st.columns([2, 3])  # Adjust the ratio to your preference
-
+                col1, col2 = st.columns([2, 3])
                 with col1:
                     specifications = selected_car["specifications"]
-
                     st.subheader(selected_car["name"])
                     st.write(f"**Type:** {selected_car['type']}")
                     st.write("**Specifications:**")
                     spec_table = selected_car["specifications"]
                     for spec_key, spec_value in spec_table.items():
                         st.write(f"**{spec_key.replace('_', ' ').capitalize()}:** {spec_value}")
-            
                 with col2:
-                # Display the car image in a larger size within the second column
                     if 'image_url' in selected_car and selected_car["image_url"]:
                         st.image(selected_car["image_url"], use_column_width=True, caption=selected_car["name"])
-
-            # Button to select the car and send data
                     if st.button("Select Car"):
                         car_data = {
                             "maxSpeed": specifications.get('maxSpeed'),
@@ -135,55 +148,53 @@ with tab3:
     ]
 
     df_tracks = pd.DataFrame(track_info)
-    if 'view_map' not in st.session_state:
-        st.session_state.view_map = False
 
-    if st.button('View Map'):
-        st.session_state.view_map = not st.session_state.view_map
+    if 'map_expanded' not in st.session_state:
+        st.session_state.map_expanded = False
+    if 'selected_track' not in st.session_state:
+        st.session_state.selected_track = None
 
-    if st.session_state.view_map:
+    # Display the selected track at the top
+    if st.session_state.selected_track:
+        st.success(f"You have selected: {st.session_state.selected_track}")
+
+    # Map Expander
+    with st.expander("View Map", expanded=st.session_state.map_expanded):
+        # Here we directly set map_expanded to True if the expander is opened
+        # It's a direct action, not toggled by the track selection
+        st.session_state.map_expanded = True
+        map_layer = pdk.Layer(
+            'ScatterplotLayer',
+            data=df_tracks,
+            get_position='[lon, lat]',
+            get_color='[200, 30, 0, 160]',
+            get_radius=50000,
+        )
         st.pydeck_chart(pdk.Deck(
             map_style='mapbox://styles/mapbox/light-v9',
-            initial_view_state=pdk.ViewState(
-            latitude=df_tracks['lat'].mean(),
-            longitude=df_tracks['lon'].mean(),
-            zoom=1,
-            pitch=0,
-        ),
-        layers=[
-            pdk.Layer(
-                'ScatterplotLayer',
-                data=df_tracks,
-                get_position='[lon, lat]',
-                get_color='[200, 30, 0, 160]',
-                get_radius=50000,
-            ),
-        ],
-        tooltip={
-            "html": "<b>{name}</b><br><b>{location}</b>",
-            "style": {
-                "backgroundColor": "steelblue",
-                "color": "white"
-            }
-        }
-    ))
+            initial_view_state=pdk.ViewState(latitude=df_tracks['lat'].mean(), longitude=df_tracks['lon'].mean(), zoom=1, pitch=0),
+            layers=[map_layer],
+            tooltip={"html": "<b>{name}</b><br><b>{location}</b>", "style": {"backgroundColor": "steelblue", "color": "white"}}
+        ))
 
+    # Callback function to handle expander state
+    def toggle_map_expander():
+        st.session_state.map_expanded = not st.session_state.map_expanded
+
+    # Use a separate button or mechanism to explicitly control the map expander state
+    # This can be an additional UI element or logic that sets 'map_expanded' independently of track selection
+
+    # Tracks Display
     tracks_per_row = 3
-    
     for i in range(0, len(track_info), tracks_per_row):
         cols = st.columns(tracks_per_row)
-        for j in range(tracks_per_row):
-            track_index = i + j
-            if track_index < len(track_info):
-                track = track_info[track_index]
-                with cols[j]: 
-                    st.image(track["image"], use_column_width=True, caption=f"{track['name']} - {track['location']}")
-                    if st.button('Select This Track', key=f'select{track_index}'):
-                        st.session_state.selected_track = track['name']
-                        st.write(f"You have selected: {track['name']}")
-    if 'selected_track' in st.session_state and st.session_state.selected_track:
-        st.write(f"Selected track: {st.session_state.selected_track}")
-
+        for j, track in enumerate(track_info[i:i+tracks_per_row]):
+            with cols[j]: 
+                st.image(track["image"], use_column_width=True, caption=f"{track['name']} - {track['location']}")
+                if st.button('Select', key=f'select{track["name"]}'):
+                    st.session_state.selected_track = track['name']
+                    # Do not toggle map_expanded state here
+                    st.experimental_rerun()  # Rerun the script
 with tab4:
     st.subheader("Make Your Own Racetrack")
     uploaded_file = st.file_uploader("Upload your racetrack image", type=["jpg", "jpeg", "png"], key="file_uploader")

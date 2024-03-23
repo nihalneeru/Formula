@@ -5,6 +5,13 @@ from cars import cars
 from streamlit_drawable_canvas import st_canvas
 from PIL import Image
 import io
+from pymongo import MongoClient
+from bson.objectid import ObjectId
+
+MONGO_URI = "mongodb+srv://nihal41:Nihal2004!@cluster0.jumqmmz.mongodb.net/"
+DATABASE_NAME = "formula"
+client = MongoClient(MONGO_URI)
+db = client[DATABASE_NAME]
 
 # CSS for styling
 header_css = """
@@ -104,39 +111,65 @@ with tab1:
         st.write("Test drive page")
 
 with tab2:
-        def send_to_pygame_ai(car_data):
-            st.success(f"Sending to ApexAI")
-        def main():
-            st.title("Car Specifications")
-            car_names = [car["name"] for car in cars]
-            selected_car_name = st.selectbox("Select a car", car_names)
-            selected_car = next(car for car in cars if car["name"] == selected_car_name)
+    DATABASE_NAME = "formula"  # The name of the database
+    COLLECTION_NAME = "cars"  # The name of the collection
 
-            if selected_car:
-                col1, col2 = st.columns([2, 3])
-                with col1:
-                    specifications = selected_car["specifications"]
-                    st.subheader(selected_car["name"])
-                    st.write(f"**Type:** {selected_car['type']}")
-                    st.write("**Specifications:**")
-                    spec_table = selected_car["specifications"]
-                    for spec_key, spec_value in spec_table.items():
-                        st.write(f"**{spec_key.replace('_', ' ').capitalize()}:** {spec_value}")
-                with col2:
-                    if 'image_url' in selected_car and selected_car["image_url"]:
-                        st.image(selected_car["image_url"], use_column_width=True, caption=selected_car["name"])
-                    if st.button("Select Car"):
-                        car_data = {
-                            "maxSpeed": specifications.get('maxSpeed'),
-                            "horsepower": specifications.get('horsepower'),
-                            "downforce": specifications.get('downforce')
-                        }
-                        send_to_pygame_ai(car_data)
+    client = MongoClient(MONGO_URI)
+    db = client[DATABASE_NAME]
+    collection = db[COLLECTION_NAME]
 
-        if __name__ == "__main__":
-            main()
+    def send_to_mongodb(car_data):
+        try:
+            # The filter {} will match any document, and upsert=True will insert if it doesn't exist
+            result = collection.replace_one({}, car_data, upsert=True)
+            if result.acknowledged:
+                st.success(f"Car data updated in MongoDB. Modified count: {result.modified_count}")
+            else:
+                st.error("Failed to update car data in MongoDB.")
+        except Exception as e:
+            st.error(f"An error occurred while sending data to MongoDB: {e}")
 
+    def select_and_send_car_info(cars):
+        """Displays car selection UI and sends the selected car's data to MongoDB."""
+        car_names = [car["name"] for car in cars]
+        selected_car_name = st.selectbox("Select a car", car_names)
+        selected_car = next((car for car in cars if car["name"] == selected_car_name), None)
+
+        if selected_car:
+            # Display car specifications and image
+            col1, col2 = st.columns([2, 3])
+            with col1:
+                st.subheader(selected_car["name"])
+                st.write(f"**Type:** {selected_car['type']}")
+                st.write("**Specifications:**")
+                for spec_key, spec_value in selected_car["specifications"].items():
+                    st.write(f"**{spec_key.replace('_', ' ').capitalize()}:** {spec_value}")
+
+            with col2:
+                if 'image_url' in selected_car:
+                    st.image(selected_car["image_url"], use_column_width=True, caption=selected_car["name"])
+            
+            # If the button is clicked, send car data to MongoDB
+            if st.button(f"Select {selected_car['name']}"):
+                send_to_mongodb(selected_car)
+
+    st.header("Choose Your Car")
+        # Call the function to display car options and handle the selection
+    select_and_send_car_info(cars)
 with tab3:
+    TRACK_COLLECTION_NAME = "tracks"  # The name of the tracks collection
+    track_collection = db[TRACK_COLLECTION_NAME]
+
+    def send_track_to_mongodb(track_data):
+        try:
+            # Using replace_one with upsert=True to ensure only one document exists
+            result = track_collection.replace_one({}, track_data, upsert=True)
+            if result:
+                st.success(f"Track data upserted to MongoDB successfully with ID: {result.upserted_id if result.upserted_id else 'existing document updated.'}")
+            else:
+                st.error("Failed to upsert track data to MongoDB.")
+        except Exception as e:
+            st.error(f"An error occurred while sending data to MongoDB: {e}")
     
     track_info = [
     {"name": "Silverstone Circuit", "location": "United Kingdom", "image": "tracks/silverstone.png", "lat": 52.0733, "lon": -1.0147},
@@ -188,10 +221,11 @@ with tab3:
             with cols[j]: 
                 st.image(track["image"], use_column_width=True, caption=f"{track['name']} - {track['location']}")
                 if st.button('Select', key=f'select{track["name"]}'):
-                    st.session_state.selected_track = track['name']
-                    # Explicitly prevent map from expanding upon selection
-                    st.session_state.map_expanded = False
-                    st.experimental_rerun()
+                    track_data = {
+                        "name": track['name'],
+                        "image": track['image']  # Assuming 'image' is a URL or a binary data
+                    }
+                    send_track_to_mongodb(track_data)
 with tab4:
     st.subheader("Make Your Own Racetrack")
     uploaded_file = st.file_uploader("Upload your racetrack image", type=["jpg", "jpeg", "png"], key="file_uploader")
@@ -245,6 +279,6 @@ with tab4:
             file_name="drawing.png",
             mime="image/png"
         )
-with tab5:
-    st.subheader("Race Mode")
-    st.radio('Select one:', ["Weather", "Track"], index=0)
+    with tab5:
+        st.subheader("Race Mode")
+        st.radio('Select one:', ["Weather", "Track"], index=0)

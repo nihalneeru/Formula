@@ -5,6 +5,8 @@ from cars import cars
 from streamlit_drawable_canvas import st_canvas
 from PIL import Image
 import io
+
+####
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 
@@ -12,103 +14,44 @@ MONGO_URI = "mongodb+srv://nihal41:Nihal2004!@cluster0.jumqmmz.mongodb.net/"
 DATABASE_NAME = "formula"
 client = MongoClient(MONGO_URI)
 db = client[DATABASE_NAME]
+####
 
-# CSS for styling
-header_css = """
+# Streamlit page configuration
+st.set_page_config(page_title="ApexAI", layout="wide")
+
+# Custom CSS for styling
+custom_css = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap');
-
-/* Header styling */
-.header {
-    background-color: red;
-    color: white;
-    padding: 10px 0px;
-    font-size: 28px; /* Slightly larger font for the header */
-    font-family: 'Ubuntu', sans-serif; /* No cursive for clean look */
-    text-align: center; /* Centered header text */
+/* Set the background color for the entire app */
+body {
+    background-color: #282a36;
 }
 
-/* File uploader styling */
-.fileUploader {
-    border: 2px solid #e6e6e6;
-    border-radius: 5px;
-    padding: 15px;
-    margin: 25px 0; /* More space around uploader */
+/* Title styling */
+h1 {
+    color: red;
+    text-align: left;
+    font-size: 60px; /* Significantly larger font size */
 }
 
-.fileUploader label {
-    display: block; /* Makes the label take the full width */
-    color: black;
-    background-color: red;
-    padding: 10px;
-    margin: 0; /* Reset margin for the label */
-    border-radius: 5px;
-    text-align: center; /* Centered text in button */
-    font-family: 'Ubuntu', sans-serif;
-}
-
-/* Style the button to match your theme */
-.fileUploader .stButton > button {
-    width: 100%; /* Full-width button */
-    border-radius: 5px;
-    font-family: 'Ubuntu', sans-serif;
-    font-weight: 700; /* Bold font weight for button text */
-}
-
-/* Tabs */
-.stTabs {
-    margin: 20px 0; /* Space around tabs */
-}
-
-/* Individual tab styling */
-.stTab {
-    font-family: 'Ubuntu', sans-serif;
-    font-size: 18px; /* Larger font size for tabs */
-}
-
-/* Override Streamlit's default styling */
-.css-1d391kg {
-    padding: 0;
+/* Subtitle styling */
+h2 {
+    color: red;
+    text-align: left;
+    margin-bottom: 20px; /* Add some space below the subtitle */
 }
 </style>
 """
 
-st.markdown(header_css, unsafe_allow_html=True)
-st.markdown("<div class='header'>ApexAI</div>", unsafe_allow_html=True)
-st.markdown("<div class='content'>", unsafe_allow_html=True)
-st.title("Explore the thrilling world of racing")
-st.write("Dive into live simulations and much more.")
-st.markdown("</div>", unsafe_allow_html=True)
+# Apply the custom CSS
+st.markdown(custom_css, unsafe_allow_html=True)
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["Home", "Choose a Car", "Select a Track", "Make a Track", "Test Drive!"])
+# Display the title and subtitle
+st.title("ApexAI")
+st.subheader("Redifining racing with neural nets.")
 
-with tab1:
-    st.markdown("## Welcome to ApexAI Racing Simulator")
-    st.markdown("""
-        Follow these steps to get started:
-        
-        1. **Choose a Car**: Select your favorite racing car to begin.
-        2. **Track Selection**:
-            - **Make Your Own Track**: Unleash your creativity by designing your very own track.
-            - **Select a Professional Formula One Track**: Choose from a list of iconic Formula One tracks.
-        3. **Test Drive**: Put your car and track to the test in a virtual race.
-    """)
-    
-    if st.button('Choose a Car'):
-        st.experimental_set_query_params(page='Choose a Car')
-        st.experimental_rerun()
-    
-    if st.button('Make Your Own Track'):
-        # Implement track creation functionality here
-        st.write("Track creation page")
-        
-    if st.button('Select a Professional Formula One Track'):
-        # Implement track selection functionality here
-        st.write("Track selection page")
-        
-    if st.button('Test Drive'):
-        # Implement test drive functionality here
-        st.write("Test drive page")
+# Define tabs
+tab2, tab3, tab4, tab5 = st.tabs(["Choose a Car", "Select a Track", "Make a Track", "Run Simulation"])
 
 with tab2:
     DATABASE_NAME = "formula"  # The name of the database
@@ -156,7 +99,9 @@ with tab2:
     st.header("Choose Your Car")
         # Call the function to display car options and handle the selection
     select_and_send_car_info(cars)
+
 with tab3:
+
     TRACK_COLLECTION_NAME = "tracks"  # The name of the tracks collection
     track_collection = db[TRACK_COLLECTION_NAME]
 
@@ -170,6 +115,8 @@ with tab3:
                 st.error("Failed to upsert track data to MongoDB.")
         except Exception as e:
             st.error(f"An error occurred while sending data to MongoDB: {e}")
+
+            ####
     
     track_info = [
     {"name": "Silverstone Circuit", "location": "United Kingdom", "image": "tracks/silverstone.png", "lat": 52.0733, "lon": -1.0147},
@@ -214,6 +161,17 @@ with tab3:
             ))
 
     # Tracks Display
+    # tracks_per_row = 3
+    # for i in range(0, len(track_info), tracks_per_row):
+    #     cols = st.columns(tracks_per_row)
+    #     for j, track in enumerate(track_info[i:i+tracks_per_row]):
+    #         with cols[j]: 
+    #             st.image(track["image"], use_column_width=True, caption=f"{track['name']} - {track['location']}")
+    #             if st.button('Select', key=f'select{track["name"]}'):
+    #                 st.session_state.selected_track = track['name']
+    #                 # Explicitly prevent map from expanding upon selection
+    #                 st.session_state.map_expanded = False
+    #                 st.experimental_rerun()
     tracks_per_row = 3
     for i in range(0, len(track_info), tracks_per_row):
         cols = st.columns(tracks_per_row)
@@ -226,16 +184,13 @@ with tab3:
                         "image": track['image']  # Assuming 'image' is a URL or a binary data
                     }
                     send_track_to_mongodb(track_data)
+
+
 with tab4:
     st.subheader("Make Your Own Racetrack")
     uploaded_file = st.file_uploader("Upload your racetrack image", type=["jpg", "jpeg", "png"], key="file_uploader")
 
     background_image = None
-    if uploaded_file is not None:
-        # Open the uploaded image with PIL
-        background_image = Image.open(uploaded_file)
-        st.success("Image uploaded successfully!")
-        st.image(uploaded_file, caption='Uploaded Racetrack.', use_column_width=True)
 
     st.title("Draw and Save Image")
 
@@ -279,6 +234,97 @@ with tab4:
             file_name="drawing.png",
             mime="image/png"
         )
-    with tab5:
-        st.subheader("Race Mode")
-        st.radio('Select one:', ["Weather", "Track"], index=0)
+        
+import subprocess
+
+# with tab5:
+#     st.header("Test Drive")
+
+#     # Button to start the Pygame application
+#     if st.button('Start Pygame Test Drive'):
+#         # Ensure that your Pygame script is accessible and executable from this path
+#         pygame_script_path = "/Users/taro/Downloads/FormulaHacks-main/framework_tutorial/neat/PyCar.py"
+        
+#         # Running the Pygame script as a subprocess
+#         subprocess.Popen(["python3", pygame_script_path], shell=False)
+#         st.success("Pygame instance started!")
+
+#     # Below, you could add code to display graphs related to angles, brakes, and acceleration as telemetry
+#     # Assuming you have telemetry data available, you can plot graphs using Streamlit's built-in functionality or libraries like Matplotlib
+
+#     # Example placeholder for telemetry data graphs
+#     st.subheader("Telemetry Data")
+#     st.write("Graphs displaying angles, brakes, and acceleration would appear here.")
+#     # You can use st.line_chart, st.area_chart, or Matplotlib for plotting
+
+
+
+with tab5:
+    st.header("Test Drive!")
+    if st.button('Launch Simulation'):
+        # Assuming you have resolved the path issue in your PyCar.py script
+        import subprocess
+        # result = subprocess.run(['python3', '/Users/taro/Downloads/FormulaHacks-main/framework_tutorial/neat/PyCar.py'], capture_output=True, text=True)
+        result = subprocess.run(['python3', '/Users/taro/Desktop/hackathon1/Formula-main/framework_tutorial/neat/PyCar.py'], capture_output=True, text=True)
+        st.text(result.stdout)
+        if result.stderr:
+            st.error(result.stderr)
+
+    # Example for displaying telemetry data
+    st.subheader("Telemetry Data")
+    # You would replace this with your actual data loading and plotting
+        
+
+
+        
+# import streamlit as st
+# from streamlit_drawable_canvas import st_canvas
+# from PIL import Image
+# import io
+
+# def main():
+#     st.title("Draw and Save Image")
+
+#     # Setup canvas with a nicer border and larger size
+#     st.markdown("""
+#     <style>
+#     .canvas-container {
+#         border: 2px dashed #000;
+#         border-radius: 5px;
+#     }
+#     </style>
+#     """, unsafe_allow_html=True)
+
+#     # Create a canvas component
+#     canvas_result = st_canvas(
+#         fill_color="rgba(255, 165, 0, 0.3)",  # Filler color
+#         stroke_width=5,
+#         stroke_color="#000000",  # Black pen color
+#         background_color="#FFFFFF",
+#         background_image=None,
+#         update_streamlit=True,
+#         height=600,  # Increased height
+#         width=800,  # Increased width
+#         drawing_mode="freedraw",
+#         key="canvas",
+#     )
+
+#     # If there is canvas data and the user clicks the save button
+#     if canvas_result.image_data is not None:
+#         # Convert the canvas data to a PIL Image
+#         im = Image.fromarray(canvas_result.image_data.astype('uint8'), mode="RGBA")
+#         # Convert to bytes
+#         buf = io.BytesIO()
+#         im.save(buf, format='PNG')
+#         byte_im = buf.getvalue()
+
+#         # Create a download button for the image
+#         st.download_button(
+#             label="Send Image!",
+#             data=byte_im,
+#             file_name="drawing.png",
+#             mime="image/png"
+#         )
+
+# if __name__ == "__main__":
+#     main()

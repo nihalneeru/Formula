@@ -13,10 +13,10 @@ ApexAI redefines racing by integrating neural networks into a racing simulation 
 - **Interactive Visualization**: Use Streamlit and PyDeck for an interactive application, allowing users to engage with the simulation process directly.
   
 ### Technical Details
-- **Streamlit is used to create a user-friendly web interface that hosts the entire simulation platform.
-- **PyDeck allows for the visualization of tracks on an interactive map, enhancing the track selection process.
-- **MongoDB is integrated for storing and retrieving car and track data, ensuring that users' selections persist across sessions.
-- **NEAT-Python implements the core AI functionality, evolving neural networks to control the cars effectively.
+- Streamlit is used to create a user-friendly web interface that hosts the entire simulation platform.
+- PyDeck allows for the visualization of tracks on an interactive map, enhancing the track selection process.
+- MongoDB is integrated for storing and retrieving car and track data, ensuring that users' selections persist across sessions.
+- NEAT-Python implements the core AI functionality, evolving neural networks to control the cars effectively.
 
 ## Installation
 

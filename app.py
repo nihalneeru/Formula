@@ -16,10 +16,8 @@ client = MongoClient(MONGO_URI)
 db = client[DATABASE_NAME]
 ####
 
-# Streamlit page configuration
 st.set_page_config(page_title="ApexAI", layout="wide")
 
-# Custom CSS for styling
 custom_css = """
 <style>
 /* Set the background color for the entire app */
@@ -43,19 +41,16 @@ h2 {
 </style>
 """
 
-# Apply the custom CSS
 st.markdown(custom_css, unsafe_allow_html=True)
 
-# Display the title and subtitle
 st.title("ApexAI")
 st.subheader("Redifining racing with neural nets.")
 
-# Define tabs
 tab2, tab3, tab4, tab5 = st.tabs(["Choose a Car", "Select a Track", "Make a Track", "Run Simulation"])
 
 with tab2:
-    DATABASE_NAME = "formula"  # The name of the database
-    COLLECTION_NAME = "cars"  # The name of the collection
+    DATABASE_NAME = "formula"  
+    COLLECTION_NAME = "cars"  
 
     client = MongoClient(MONGO_URI)
     db = client[DATABASE_NAME]
@@ -63,7 +58,6 @@ with tab2:
 
     def send_to_mongodb(car_data):
         try:
-            # The filter {} will match any document, and upsert=True will insert if it doesn't exist
             result = collection.replace_one({}, car_data, upsert=True)
             if result.acknowledged:
                 st.success(f"Car data updated in MongoDB. Modified count: {result.modified_count}")
@@ -79,7 +73,6 @@ with tab2:
         selected_car = next((car for car in cars if car["name"] == selected_car_name), None)
 
         if selected_car:
-            # Display car specifications and image
             col1, col2 = st.columns([2, 3])
             with col1:
                 st.subheader(selected_car["name"])
@@ -92,22 +85,19 @@ with tab2:
                 if 'image_url' in selected_car:
                     st.image(selected_car["image_url"], use_column_width=True, caption=selected_car["name"])
             
-            # If the button is clicked, send car data to MongoDB
             if st.button(f"Select {selected_car['name']}"):
                 send_to_mongodb(selected_car)
 
     st.header("Choose Your Car")
-        # Call the function to display car options and handle the selection
     select_and_send_car_info(cars)
 
 with tab3:
 
-    TRACK_COLLECTION_NAME = "tracks"  # The name of the tracks collection
+    TRACK_COLLECTION_NAME = "tracks"  
     track_collection = db[TRACK_COLLECTION_NAME]
 
     def send_track_to_mongodb(track_data):
         try:
-            # Using replace_one with upsert=True to ensure only one document exists
             result = track_collection.replace_one({}, track_data, upsert=True)
             if result:
                 st.success(f"Track data upserted to MongoDB successfully with ID: {result.upserted_id if result.upserted_id else 'existing document updated.'}")
@@ -135,15 +125,12 @@ with tab3:
     if 'selected_track' not in st.session_state:
         st.session_state.selected_track = None
 
-    # Display the selected track at the top
     if st.session_state.selected_track:
         st.success(f"You have selected: {st.session_state.selected_track}")
 
-    # Button to control the map visibility
     if st.button('View Map'):
         st.session_state.map_expanded = True
 
-    # Conditionally render the map expander if map_expanded is True in the session state
     if st.session_state.get('map_expanded', False):
         with st.expander("Map", expanded=True):
             map_layer = pdk.Layer(
@@ -194,7 +181,6 @@ with tab4:
 
     st.title("Draw and Save Image")
 
-    # Setup canvas with a nicer border and larger size
     st.markdown("""
     <style>
     .canvas-container {
@@ -204,30 +190,25 @@ with tab4:
     </style>
     """, unsafe_allow_html=True)
 
-    # Create a canvas component
     canvas_result = st_canvas(
-        fill_color="rgba(255, 165, 0, 0.3)",  # Filler color
+        fill_color="rgba(255, 165, 0, 0.3)",  
         stroke_width=5,
-        stroke_color="#000000",  # Black pen color
+        stroke_color="#000000",  
         background_color="#FFFFFF",
         background_image=background_image,
         update_streamlit=True,
-        height=600,  # Increased height
-        width=800,  # Increased width
+        height=600,  
+        width=800, 
         drawing_mode="freedraw",
         key="canvas",
     )
 
-    # If there is canvas data
     if canvas_result.image_data is not None:
-        # Convert the canvas data to a PIL Image
         im = Image.fromarray(canvas_result.image_data.astype('uint8'), mode="RGBA")
-        # Convert to bytes
         buf = io.BytesIO()
         im.save(buf, format='PNG')
         byte_im = buf.getvalue()
 
-        # Create a download button for the image
         st.download_button(
             label="Download Image",
             data=byte_im,
@@ -240,29 +221,21 @@ import subprocess
 # with tab5:
 #     st.header("Test Drive")
 
-#     # Button to start the Pygame application
 #     if st.button('Start Pygame Test Drive'):
-#         # Ensure that your Pygame script is accessible and executable from this path
 #         pygame_script_path = "/Users/taro/Downloads/FormulaHacks-main/framework_tutorial/neat/PyCar.py"
         
-#         # Running the Pygame script as a subprocess
 #         subprocess.Popen(["python3", pygame_script_path], shell=False)
 #         st.success("Pygame instance started!")
 
-#     # Below, you could add code to display graphs related to angles, brakes, and acceleration as telemetry
-#     # Assuming you have telemetry data available, you can plot graphs using Streamlit's built-in functionality or libraries like Matplotlib
 
-#     # Example placeholder for telemetry data graphs
 #     st.subheader("Telemetry Data")
 #     st.write("Graphs displaying angles, brakes, and acceleration would appear here.")
-#     # You can use st.line_chart, st.area_chart, or Matplotlib for plotting
 
 
 
 with tab5:
     st.header("Test Drive!")
     if st.button('Launch Simulation'):
-        # Assuming you have resolved the path issue in your PyCar.py script
         import subprocess
         # result = subprocess.run(['python3', '/Users/taro/Downloads/FormulaHacks-main/framework_tutorial/neat/PyCar.py'], capture_output=True, text=True)
         result = subprocess.run(['python3', '/Users/taro/Desktop/hackathon1/Formula-main/framework_tutorial/neat/PyCar.py'], capture_output=True, text=True)
@@ -270,9 +243,7 @@ with tab5:
         if result.stderr:
             st.error(result.stderr)
 
-    # Example for displaying telemetry data
     st.subheader("Telemetry Data")
-    # You would replace this with your actual data loading and plotting
         
 
 
@@ -285,7 +256,6 @@ with tab5:
 # def main():
 #     st.title("Draw and Save Image")
 
-#     # Setup canvas with a nicer border and larger size
 #     st.markdown("""
 #     <style>
 #     .canvas-container {
@@ -295,7 +265,6 @@ with tab5:
 #     </style>
 #     """, unsafe_allow_html=True)
 
-#     # Create a canvas component
 #     canvas_result = st_canvas(
 #         fill_color="rgba(255, 165, 0, 0.3)",  # Filler color
 #         stroke_width=5,
@@ -309,16 +278,13 @@ with tab5:
 #         key="canvas",
 #     )
 
-#     # If there is canvas data and the user clicks the save button
 #     if canvas_result.image_data is not None:
-#         # Convert the canvas data to a PIL Image
 #         im = Image.fromarray(canvas_result.image_data.astype('uint8'), mode="RGBA")
 #         # Convert to bytes
 #         buf = io.BytesIO()
 #         im.save(buf, format='PNG')
 #         byte_im = buf.getvalue()
 
-#         # Create a download button for the image
 #         st.download_button(
 #             label="Send Image!",
 #             data=byte_im,

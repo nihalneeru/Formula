@@ -1,4 +1,4 @@
-# ApexAI
+# ApexAI (1st Place FormulaHacks)
 
 ApexAI redefines racing by integrating neural networks into a racing simulation environment, providing an interactive platform for simulating car races, choosing cars and tracks, creating custom tracks, and observing AI-controlled cars evolve over time.
 

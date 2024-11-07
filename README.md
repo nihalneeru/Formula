@@ -4,7 +4,7 @@ ApexAI redefines racing by integrating neural networks into a racing simulation 
 
 ## Overview
 
-"ApexAI" leverages Python and several libraries, including Streamlit, PyDeck, PyMongo, and NEAT-Python, to offer a comprehensive racing simulation platform. Users can select cars with distinct specifications, choose from various iconic racing tracks, design custom tracks, and watch as neural network-based AI competes, learning and improving over time. The project aims to bridge the gap between gaming, AI education, and motorsport engineering, offering insights into how machine learning can influence decision-making in high-speed racing conditions.
+"ApexAI" leverages Python and several libraries, including Streamlit, PyDeck, PyMongo, Pygame, and NEAT-Python, to offer a comprehensive racing simulation platform. Users can select cars with distinct specifications, choose from various iconic racing tracks, design custom tracks, and watch as neural network-based AI competes, learning and improving over time. The project aims to bridge the gap between gaming, AI education, and motorsport engineering, offering insights into how machine learning can influence decision-making in high-speed racing conditions.
 
 ### Features
 - **Car Selection**: Choose from a variety of cars, each with unique specifications and capabilities.
